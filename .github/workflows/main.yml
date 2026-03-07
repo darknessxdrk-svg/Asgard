@@ -23,7 +23,19 @@ jobs:
 
       # 2. Zip dosyasını çıkart
       - name: Extract Asgard.zip
-        run: unzip -o Asgard.zip -d project
+        run: |
+          mkdir -p project
+          unzip -o Asgard.zip -d _ziptemp
+          COUNT=$(ls _ziptemp | wc -l)
+          FIRST=$(ls _ziptemp | head -1)
+          if [ "$COUNT" -eq 1 ] && [ -d "_ziptemp/$FIRST" ]; then
+            cp -r _ziptemp/$FIRST/. project/
+          else
+            cp -r _ziptemp/. project/
+          fi
+          rm -rf _ziptemp
+          echo "--- project icerik ---"
+          ls project/
 
       # 3. Java 17 kur
       - name: Set up Java 17
