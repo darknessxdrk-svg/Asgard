@@ -1,4 +1,3 @@
-# Flutter CI/CD for root project
 name: Flutter CI/CD Clean Build
 
 on:
@@ -25,27 +24,27 @@ jobs:
           flutter-version: '3.22.3'
           channel: 'stable'
 
-      # 3️⃣ Cache temizle / temiz build
-      - name: Clean previous builds
-        run: |
-          flutter clean
-          rm -rf build/
-          rm -rf .dart_tool/
-          rm -rf .pub-cache/
+      # 3️⃣ Repo root olarak tanımla
+      - name: Set working directory
+        run: echo "WORKDIR=$(pwd)" >> $GITHUB_ENV
 
-      # 4️⃣ Dependencies yükle
+      # 4️⃣ Clean build
+      - name: Clean previous builds
+        run: flutter clean
+
+      # 5️⃣ Dependencies yükle
       - name: Flutter pub get
         run: flutter pub get
 
-      # 5️⃣ Testleri çalıştır
+      # 6️⃣ Testleri çalıştır
       - name: Run tests
         run: flutter test
 
-      # 6️⃣ APK build et
+      # 7️⃣ APK build et
       - name: Build APK
         run: flutter build apk --release
 
-      # 7️⃣ APK’yı artifacts olarak kaydet
+      # 8️⃣ APK’yı artifacts olarak kaydet
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
