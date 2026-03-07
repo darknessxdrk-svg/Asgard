@@ -91,7 +91,7 @@ jobs:
       # 11. APK'nın gerçek imza SHA-1'ini yazdır
       - name: Print APK SHA-1
         run: |
-          apksigner verify --print-certs             project/build/app/outputs/flutter-apk/app-debug.apk             2>/dev/null | grep "SHA-1"
+          cd $ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | tail -1) && ./apksigner verify --print-certs $GITHUB_WORKSPACE/project/build/app/outputs/flutter-apk/app-debug.apk | grep "SHA-1"
         continue-on-error: true
 
       # 12. APK'yı artifact olarak kaydet
