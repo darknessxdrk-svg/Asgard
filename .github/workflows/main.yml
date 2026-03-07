@@ -23,7 +23,7 @@ jobs:
 
       # 2. Zip dosyasını çıkart
       - name: Extract Asgard.zip
-        run: unzip -o Asgard.zip -d project/
+        run: unzip -o Asgard.zip && mv project_build project
 
       # 3. Java 17 kur
       - name: Set up Java 17
@@ -58,24 +58,28 @@ jobs:
           key: gradle-${{ hashFiles('project/android/**/*.gradle*') }}
           restore-keys: gradle-
 
-      # 7. Bağımlılıkları yükle
+      # 7. Debug SHA-1
+      - name: Print SHA-1
+        run: keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android 2>/dev/null | grep "SHA1"
+
+      # 8. Bağımlılıkları yükle
       - name: Install Flutter dependencies
         working-directory: project
         run: flutter pub get
 
-      # 8. Launcher icon oluştur
+      # 9. Launcher icon oluştur
       - name: Generate launcher icons
         working-directory: project
         run: dart run flutter_launcher_icons
         continue-on-error: true
 
-      # 9. Splash screen oluştur
+      # 10. Splash screen oluştur
       - name: Generate splash screen
         working-directory: project
         run: dart run flutter_native_splash:create
         continue-on-error: true
 
-      # 10. APK derle
+      # 11. APK derle
       - name: Build APK
         working-directory: project
         run: flutter build apk --debug --target-platform android-arm64
@@ -88,7 +92,7 @@ jobs:
           path: project/build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 30
 
-      # 12. Tag push'unda Release oluştur
+      # 13. Tag push'unda Release oluştur
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
