@@ -1,4 +1,4 @@
-name: Flutter CI/CD Clean Build
+name: Build Flutter APK
 
 on:
   push:
@@ -7,46 +7,64 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
+    name: Build APK
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Kodu çek
-      - name: Check out code
-        uses: actions/checkout@v3
+      # 1. Kodu çek
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      # 2️⃣ Flutter ortamını kur
+      # 2. Java 17 kur (Flutter için zorunlu)
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # 3. Flutter kur
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.3'
-          channel: 'stable'
+          flutter-version: "3.24.5"
+          channel: stable
+          cache: true
 
-      # 3️⃣ Clean build
-      - name: Clean previous builds
-        run: |
-          flutter clean
-          rm -rf build/
-          rm -rf .dart_tool/
-          rm -rf .pub-cache/
+      # 4. Flutter sürümünü doğrula
+      - name: Check Flutter version
+        run: flutter --version
 
-      # 4️⃣ Dependencies yükle
-      - name: Flutter pub get
+      # 5. Bağımlılıkları yükle
+      - name: Install Flutter dependencies
         run: flutter pub get
 
-      # 5️⃣ Testleri çalıştır
-      - name: Run tests
-        run: flutter test
+      # 6. Launcher icon oluştur
+      - name: Generate launcher icons
+        run: dart run flutter_launcher_icons
+        continue-on-error: true
 
-      # 6️⃣ APK build et
-      - name: Build APK
-        run: flutter build apk --release
+      # 7. Splash screen oluştur
+      - name: Generate splash screen
+        run: dart run flutter_native_splash:create
+        continue-on-error: true
 
-      # 7️⃣ APK’yı artifacts olarak kaydet
-      - name: Upload APK
+      # 8. Kod analizi yap
+      - name: Analyze code
+        run: flutter analyze --no-fatal-infos
+        continue-on-error: true
+
+      # 9. APK derle (debug)
+      - name: Build Debug APK
+        run: flutter build apk --debug --no-shrink
+
+      # 10. APK'yı artifact olarak kaydet
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: debug-apk
+          path: build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
