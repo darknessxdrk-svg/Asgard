@@ -1,37 +1,30 @@
-name: Build Flutter APK
+# This is the workflow to build and test the Flutter application
+
+name: Flutter CI
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
-      
-      - name: Extract ZIP file
-        run: unzip -o Asgard.zip && rm Asgard.zip
-      
-      - name: Fix pubspec.yaml intl version
-        run: |
-          find . -name "pubspec.yaml" -type f | while read file; do
-            sed -i 's/intl: \^0\.19\.0/intl: ^0.20.2/g' "$file"
-          done
-      
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - name: Check out code
+        uses: actions/checkout@v2
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v1
         with:
-          flutter-version: '3.x'
-      
-      - name: Install dependencies
+          flutter-version: '3.24.0'
+
+      - name: Run flutter pub get
         run: flutter pub get
-      
-      - name: Build APK
-        run: flutter build apk --release
-      
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release.apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Run unittest
+        run: flutter test
