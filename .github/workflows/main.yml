@@ -13,44 +13,40 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Kodu çek
+      # 1️⃣ Kodu çek
       - name: Check out code
         uses: actions/checkout@v3
 
-      # Flutter ortamını kur
+      # 2️⃣ Flutter ortamını kur
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.3'
           channel: 'stable'
 
-      # Repo root klasörünü kontrol et
-      - name: Show repo structure
-        run: ls -R
-
-      # Clean build
+      # 3️⃣ Clean build
       - name: Clean previous builds
-        working-directory: ./Asgard  # checkout sonrası repo klasörü
-        run: flutter clean
+        run: |
+          flutter clean
+          rm -rf build/
+          rm -rf .dart_tool/
+          rm -rf .pub-cache/
 
-      # Dependencies yükle
+      # 4️⃣ Dependencies yükle
       - name: Flutter pub get
-        working-directory: ./Asgard
         run: flutter pub get
 
-      # Testleri çalıştır
+      # 5️⃣ Testleri çalıştır
       - name: Run tests
-        working-directory: ./Asgard
         run: flutter test
 
-      # APK build et
+      # 6️⃣ APK build et
       - name: Build APK
-        working-directory: ./Asgard
         run: flutter build apk --release
 
-      # APK’yı artifacts olarak kaydet
+      # 7️⃣ APK’yı artifacts olarak kaydet
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: ./Asgard/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
