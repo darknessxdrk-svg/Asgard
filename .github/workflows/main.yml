@@ -1,4 +1,4 @@
-# Flutter CI/CD with clean builds to ensure stable APK output
+# Flutter CI/CD for project inside asgard folder
 name: Flutter CI/CD Clean Build
 
 on:
@@ -14,19 +14,20 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Kodu çek (v3)
+      # 1️⃣ Kodu çek
       - name: Check out code
         uses: actions/checkout@v3
 
-      # 2️⃣ Flutter ortamını kur (v2, stabil sürüm)
+      # 2️⃣ Flutter ortamını kur
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.3'
           channel: 'stable'
 
-      # 3️⃣ Cache temizle (temiz build için)
+      # 3️⃣ Cache temizle / temiz build
       - name: Clean previous builds
+        working-directory: ./asgard
         run: |
           flutter clean
           rm -rf build/
@@ -35,19 +36,22 @@ jobs:
 
       # 4️⃣ Dependencies yükle
       - name: Flutter pub get
+        working-directory: ./asgard
         run: flutter pub get
 
       # 5️⃣ Testleri çalıştır
       - name: Run tests
+        working-directory: ./asgard
         run: flutter test
 
       # 6️⃣ APK build et
       - name: Build APK
+        working-directory: ./asgard
         run: flutter build apk --release
 
-      # 7️⃣ APK’yı artifacts olarak kaydet (v4)
+      # 7️⃣ APK’yı artifacts olarak kaydet
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: ./asgard/build/app/outputs/flutter-apk/app-release.apk
