@@ -23,7 +23,7 @@ jobs:
 
       # 2. Zip dosyasını çıkart
       - name: Extract Asgard.zip
-        run: unzip -o Asgard.zip && mv project_build project
+        run: unzip -o Asgard.zip -d project
 
       # 3. Java 17 kur
       - name: Set up Java 17
