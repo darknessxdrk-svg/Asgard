@@ -80,13 +80,11 @@ jobs:
         working-directory: project
         run: flutter build apk --debug --target-platform android-arm64
 
-      # 11. SHA-1 yazdır
-      - name: Print SHA-1
+      # 11. Sabit debug keystore kur
+      - name: Setup debug keystore
         run: |
           mkdir -p ~/.android
-          keytool -genkeypair -v             -keystore ~/.android/debug.keystore             -alias androiddebugkey             -keyalg RSA -keysize 2048             -storepass android -keypass android             -dname "CN=Android Debug,O=Android,C=US" 2>/dev/null || true
-          keytool -list -v             -keystore ~/.android/debug.keystore             -alias androiddebugkey             -storepass android -keypass android 2>/dev/null | grep "SHA1:"
-        continue-on-error: true
+          echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 -d > ~/.android/debug.keystore
 
       # 12. APK'yı artifact olarak kaydet
       - name: Upload APK
