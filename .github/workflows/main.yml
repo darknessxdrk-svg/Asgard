@@ -19,14 +19,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Java 17 kur (Flutter için zorunlu)
+      # 2. Zip dosyasını çıkart
+      - name: Extract Asgard.zip
+        run: |
+          unzip -o Asgard.zip -d project/
+          echo "--- Proje içeriği ---"
+          ls project/
+
+      # 3. Java 17 kur
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: "17"
 
-      # 3. Flutter kur
+      # 4. Flutter kur
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -34,37 +41,42 @@ jobs:
           channel: stable
           cache: true
 
-      # 4. Flutter sürümünü doğrula
+      # 5. Flutter sürümünü doğrula
       - name: Check Flutter version
         run: flutter --version
 
-      # 5. Bağımlılıkları yükle
+      # 6. Bağımlılıkları yükle
       - name: Install Flutter dependencies
+        working-directory: project
         run: flutter pub get
 
-      # 6. Launcher icon oluştur
+      # 7. Launcher icon oluştur
       - name: Generate launcher icons
+        working-directory: project
         run: dart run flutter_launcher_icons
         continue-on-error: true
 
-      # 7. Splash screen oluştur
+      # 8. Splash screen oluştur
       - name: Generate splash screen
+        working-directory: project
         run: dart run flutter_native_splash:create
         continue-on-error: true
 
-      # 8. Kod analizi yap
+      # 9. Kod analizi
       - name: Analyze code
+        working-directory: project
         run: flutter analyze --no-fatal-infos
         continue-on-error: true
 
-      # 9. APK derle (debug)
+      # 10. APK derle
       - name: Build Debug APK
-        run: flutter build apk --debug --no-shrink
+        working-directory: project
+        run: flutter build apk --debug
 
-      # 10. APK'yı artifact olarak kaydet
+      # 11. APK'yı artifact olarak kaydet
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: build/app/outputs/flutter-apk/app-debug.apk
+          path: project/build/app/outputs/flutter-apk/app-debug.apk
           retention-days: 30
