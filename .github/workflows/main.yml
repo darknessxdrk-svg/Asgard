@@ -13,6 +13,12 @@ jobs:
       - name: Extract ZIP file
         run: unzip -o Asgard.zip && rm Asgard.zip
       
+      - name: Fix pubspec.yaml intl version
+        run: |
+          find . -name "pubspec.yaml" -type f | while read file; do
+            sed -i 's/intl: \^0\.19\.0/intl: ^0.20.2/g' "$file"
+          done
+      
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
