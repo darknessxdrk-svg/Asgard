@@ -11,7 +11,7 @@ jobs:
       - uses: actions/checkout@v3
       
       - name: Extract ZIP file
-        run: unzip -o asgard.zip && rm asgard.zip
+        run: unzip -o Asgard.zip && rm Asgard.zip
       
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
