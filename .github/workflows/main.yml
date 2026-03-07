@@ -1,4 +1,4 @@
-# Flutter CI/CD for project inside asgard folder
+# Flutter CI/CD for root project
 name: Flutter CI/CD Clean Build
 
 on:
@@ -27,7 +27,6 @@ jobs:
 
       # 3️⃣ Cache temizle / temiz build
       - name: Clean previous builds
-        working-directory: ./asgard
         run: |
           flutter clean
           rm -rf build/
@@ -36,17 +35,14 @@ jobs:
 
       # 4️⃣ Dependencies yükle
       - name: Flutter pub get
-        working-directory: ./asgard
         run: flutter pub get
 
       # 5️⃣ Testleri çalıştır
       - name: Run tests
-        working-directory: ./asgard
         run: flutter test
 
       # 6️⃣ APK build et
       - name: Build APK
-        working-directory: ./asgard
         run: flutter build apk --release
 
       # 7️⃣ APK’yı artifacts olarak kaydet
@@ -54,4 +50,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: ./asgard/build/app/outputs/flutter-apk/app-release.apk
+          path: build/app/outputs/flutter-apk/app-release.apk
