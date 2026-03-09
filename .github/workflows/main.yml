@@ -97,7 +97,7 @@ jobs:
 
       - name: Build APK
         working-directory: project
-        run: flutter build apk --debug --target-platform android-arm64
+        run: flutter build apk --debug --target-platform android-arm64 --dart-define=ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
 
       # APK'nın gerçek SHA-1'ini yazdır - Firebase'deki ile karşılaştır
       - name: Print APK SHA-1
