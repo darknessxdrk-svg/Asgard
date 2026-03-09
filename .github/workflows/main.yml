@@ -90,11 +90,6 @@ jobs:
         run: dart run flutter_launcher_icons
         continue-on-error: true
 
-      - name: Generate splash screen
-        working-directory: project
-        run: dart run flutter_native_splash:create
-        continue-on-error: true
-
       - name: Build APK
         working-directory: project
         run: flutter build apk --debug --target-platform android-arm64 --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
