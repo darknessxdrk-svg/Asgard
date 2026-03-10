@@ -62,19 +62,10 @@ jobs:
           key: gradle-${{ hashFiles('project/android/**/*.gradle*') }}
           restore-keys: gradle-
 
-      # Sabit keystore kur ve SHA-1 yazdır
       - name: Setup keystore
         run: |
           mkdir -p ~/.android
-          echo "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" | tr -d " " | base64 -d > ~/.android/debug.keystore
-
-          echo "=== Keystore SHA-1 ==="
-          keytool -list -v \
-            -keystore ~/.android/debug.keystore \
-            -alias androiddebugkey \
-            -storepass android 2>/dev/null | grep "SHA1:"
-          
-          # key.properties'i güncelle - gerçek path ile
+          echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | tr -d " \n" | base64 -d > ~/.android/debug.keystore
           sed -i "s|storeFile=.*|storeFile=$HOME/.android/debug.keystore|" project/android/key.properties
           echo "key.properties:"
           cat project/android/key.properties
@@ -88,55 +79,30 @@ jobs:
         run: dart run flutter_launcher_icons
         continue-on-error: true
 
-      - name: Build APK
+      - name: Generate splash screen
         working-directory: project
-        run: flutter build apk --release --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} || true
-
-      - name: Find and copy APK
-        working-directory: project
-        run: |
-          echo "=== Tüm build çıktıları ==="
-          find build -name "*.apk" 2>/dev/null || echo "build dizini yok"
-          find /home/runner/work -name "*.apk" 2>/dev/null || true
-          mkdir -p build/app/outputs/flutter-apk
-          # 1. Flutter standart yol
-          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
-            echo "✅ APK standart yerde bulundu."
-          else
-            # 2. Gradle çıktı yolu
-            APK=$(find build/app/outputs/apk -name "*.apk" 2>/dev/null | grep -v unsigned | head -1)
-            # 3. Tüm build altı
-            if [ -z "$APK" ]; then
-              APK=$(find build -name "*.apk" 2>/dev/null | grep -v unsigned | head -1)
-            fi
-            # 4. Runner workspace geneli
-            if [ -z "$APK" ]; then
-              APK=$(find /home/runner/work -name "*.apk" 2>/dev/null | grep -v unsigned | head -1)
-            fi
-            if [ -n "$APK" ]; then
-              cp "$APK" build/app/outputs/flutter-apk/app-release.apk
-              echo "✅ APK kopyalandı: $APK"
-            else
-              echo "❌ HATA: Hiçbir yerde APK bulunamadı! Build gerçekten başarısız."
-              exit 1
-            fi
-          fi
-          ls -lh build/app/outputs/flutter-apk/
-
-      # APK'nın gerçek SHA-1'ini yazdır - Firebase'deki ile karşılaştır
-      - name: Print APK SHA-1
-        run: |
-          echo "=== APK İMZA SHA-1 (Firebase'e bu eklenecek) ==="
-          cd $ANDROID_HOME/build-tools/$(ls $ANDROID_HOME/build-tools | tail -1)
-          ./apksigner verify --print-certs \
-            $GITHUB_WORKSPACE/project/build/app/outputs/flutter-apk/app-release.apk \
-            | grep -i "sha"
+        run: dart run flutter_native_splash:create
         continue-on-error: true
+
+      - name: Build APK (Release)
+        working-directory: project
+        run: |
+          flutter build apk --release \
+            --target-platform android-arm64 \
+            --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+            --dart-define=CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
+            --dart-define=CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
+            --dart-define=FCM_SERVICE_ACCOUNT_JSON_B64=${{ secrets.FCM_SERVICE_ACCOUNT_JSON_B64 }}
+
+      - name: Find APK
+        run: |
+          echo "=== APK Arama ==="
+          find project/build -name "*.apk" 2>/dev/null || echo "APK bulunamadı"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: apk
+          name: asgard-release
           path: project/build/app/outputs/flutter-apk/app-release.apk
           retention-days: 30
 
@@ -144,7 +110,6 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          repository: darknessxdrk-svg/Asgard
           files: project/build/app/outputs/flutter-apk/app-release.apk
           name: "Sürüm ${{ github.ref_name }}"
           body: |
