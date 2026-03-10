@@ -90,21 +90,38 @@ jobs:
 
       - name: Build APK
         working-directory: project
+        run: flutter build apk --release --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} || true
+
+      - name: Find and copy APK
+        working-directory: project
         run: |
-          flutter build apk --release --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
-          # APK'nın nerede olduğunu bul
-          echo "=== APK Arama ==="
-          find build -name "*.apk" 2>/dev/null | head -20
-          # flutter-apk dizinine kopyala (eğer orada değilse)
+          echo "=== Tüm build çıktıları ==="
+          find build -name "*.apk" 2>/dev/null || echo "build dizini yok"
+          find /home/runner/work -name "*.apk" 2>/dev/null || true
           mkdir -p build/app/outputs/flutter-apk
-          APK=$(find build/app/outputs -name "app-release.apk" 2>/dev/null | head -1)
-          if [ -z "$APK" ]; then
-            APK=$(find build -name "*.apk" 2>/dev/null | grep -v unsigned | head -1)
+          # 1. Flutter standart yol
+          if [ -f "build/app/outputs/flutter-apk/app-release.apk" ]; then
+            echo "✅ APK standart yerde bulundu."
+          else
+            # 2. Gradle çıktı yolu
+            APK=$(find build/app/outputs/apk -name "*.apk" 2>/dev/null | grep -v unsigned | head -1)
+            # 3. Tüm build altı
+            if [ -z "$APK" ]; then
+              APK=$(find build -name "*.apk" 2>/dev/null | grep -v unsigned | head -1)
+            fi
+            # 4. Runner workspace geneli
+            if [ -z "$APK" ]; then
+              APK=$(find /home/runner/work -name "*.apk" 2>/dev/null | grep -v unsigned | head -1)
+            fi
+            if [ -n "$APK" ]; then
+              cp "$APK" build/app/outputs/flutter-apk/app-release.apk
+              echo "✅ APK kopyalandı: $APK"
+            else
+              echo "❌ HATA: Hiçbir yerde APK bulunamadı! Build gerçekten başarısız."
+              exit 1
+            fi
           fi
-          if [ -n "$APK" ]; then
-            cp "$APK" build/app/outputs/flutter-apk/app-release.apk 2>/dev/null || true
-            echo "APK kopyalandı: $APK"
-          fi
+          ls -lh build/app/outputs/flutter-apk/
 
       # APK'nın gerçek SHA-1'ini yazdır - Firebase'deki ile karşılaştır
       - name: Print APK SHA-1
