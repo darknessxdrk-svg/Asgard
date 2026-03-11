@@ -93,8 +93,7 @@ jobs:
             --dart-define=CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
             --dart-define=CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
             --dart-define=FCM_SERVICE_ACCOUNT_JSON_B64=${{ secrets.FCM_SERVICE_ACCOUNT_JSON_B64 }} \
-            --dart-define=ZEGO_APP_ID=${{ secrets.ZEGO_APP_ID }} \
-            --dart-define=ZEGO_APP_SIGN=${{ secrets.ZEGO_APP_SIGN }}
+            --dart-define=AGORA_APP_ID=${{ secrets.AGORA_APP_ID }}
 
       - name: Find & rename APK
         run: |
