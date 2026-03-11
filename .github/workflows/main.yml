@@ -84,11 +84,12 @@ jobs:
         run: dart run flutter_native_splash:create
         continue-on-error: true
 
-      - name: Build APK (Release)
+      - name: Build APK (Release - arm64 only)
         working-directory: project
         run: |
           flutter build apk --release \
             --target-platform android-arm64 \
+            --split-per-abi \
             --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
             --dart-define=CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
             --dart-define=CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
@@ -99,14 +100,17 @@ jobs:
         run: |
           echo "=== Tüm APK'lar ==="
           find project/build -name "*.apk" 2>/dev/null
-          echo "=== Kopyalama ==="
-          # ABI splits veya normal - hangisi varsa al
-          APK=$(find project/build -name "*.apk" | grep -v "unsigned\|unaligned" | head -1)
+          APK=$(find project/build -name "*arm64*.apk" | grep -v "unsigned\|unaligned" | head -1)
+          if [ -z "$APK" ]; then
+            APK=$(find project/build -name "*.apk" | grep -v "unsigned\|unaligned" | head -1)
+          fi
           if [ -n "$APK" ]; then
-            cp "$APK" project/build/asgard-release.apk
-            echo "✅ APK bulundu: $APK"
+            mkdir -p project/build/outputs/flutter-apk
+            cp "$APK" project/build/outputs/flutter-apk/asgard-release.apk
+            SIZE=$(du -sh "$APK" | cut -f1)
+            echo "APK boyutu: $SIZE"
           else
-            echo "❌ APK bulunamadı"
+            echo "APK bulunamadi"
             exit 1
           fi
 
@@ -114,18 +118,18 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: asgard-release
-          path: project/build/asgard-release.apk
+          path: project/build/outputs/flutter-apk/asgard-release.apk
           retention-days: 30
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: project/build/asgard-release.apk
+          files: project/build/outputs/flutter-apk/asgard-release.apk
           name: "Sürüm ${{ github.ref_name }}"
           body: |
-            ## 🚀 Yeni Güncelleme: ${{ github.ref_name }}
-            APK'yı indirmek için aşağıdaki dosyaya tıklayın.
+            ## Yeni Güncelleme: ${{ github.ref_name }}
+            APK indirmek icin asagidaki dosyaya tiklayin.
           draft: false
           prerelease: false
         env:
