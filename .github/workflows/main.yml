@@ -87,10 +87,7 @@ jobs:
       - name: Build APK (Release)
         working-directory: project
         run: |
-          flutter build apk --release \
-            --target-platform android-arm64 \
-            --obfuscate \
-            --split-debug-info=build/debug-info \
+          flutter build apk --debug \
             --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
             --dart-define=CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
             --dart-define=CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
