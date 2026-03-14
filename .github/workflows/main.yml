@@ -94,15 +94,13 @@ jobs:
             --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
             --dart-define=CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
             --dart-define=CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
-            --dart-define=FCM_SERVICE_ACCOUNT_JSON_B64=${{ secrets.FCM_SERVICE_ACCOUNT_JSON_B64 }} \
-            --dart-define=AGORA_APP_ID=${{ secrets.AGORA_APP_ID }}
+            --dart-define=FCM_SERVICE_ACCOUNT_JSON_B64=${{ secrets.FCM_SERVICE_ACCOUNT_JSON_B64 }}
 
       - name: Find & rename APK
         run: |
           echo "=== Tüm APK'lar ==="
           find project/build -name "*.apk" 2>/dev/null
           echo "=== Kopyalama ==="
-          # ABI splits veya normal - hangisi varsa al
           APK=$(find project/build -name "*.apk" | grep -v "unsigned\|unaligned" | head -1)
           if [ -n "$APK" ]; then
             cp "$APK" project/build/asgard-release.apk
