@@ -1,23 +1,105 @@
-name: Build Flutter APK
+name: Build APK + Deploy Functions
 
 on:
   push:
-    branches:
-      - main
-    tags:
-      - 'v*'
+    branches: [main]
+    tags: ['v*']
   pull_request:
-    branches:
-      - main
+    branches: [main]
   workflow_dispatch:
 
 jobs:
-  build:
-    name: Build APK
+  # ──────────────────────────────────────────────────────────────
+  # JOB 1: Cloud Functions deploy (her push'ta)
+  # ──────────────────────────────────────────────────────────────
+  deploy-functions:
+    name: Deploy Cloud Functions
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Extract Asgard.zip
+        run: |
+          mkdir -p project
+          unzip -o Asgard.zip -d _ziptemp
+          COUNT=$(ls _ziptemp | wc -l)
+          FIRST=$(ls _ziptemp | head -1)
+          if [ "$COUNT" -eq 1 ] && [ -d "_ziptemp/$FIRST" ]; then
+            cp -r _ziptemp/$FIRST/. project/
+          else
+            cp -r _ziptemp/. project/
+          fi
+          rm -rf _ziptemp
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
+
+      - name: Install Functions dependencies
+        working-directory: project/functions
+        run: npm install
+
+      - name: Set Firebase secrets
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          cd project
+
+          # Her secret'ı Firebase Secret Manager'a yükle
+          echo "${{ secrets.FCM_SERVICE_ACCOUNT_JSON }}" | \
+            firebase functions:secrets:set FCM_SERVICE_ACCOUNT_JSON \
+            --project asgardchat-f3880 --token "$FIREBASE_TOKEN" --force || true
+
+          echo "${{ secrets.CLOUDINARY_API_SECRET }}" | \
+            firebase functions:secrets:set CLOUDINARY_API_SECRET \
+            --project asgardchat-f3880 --token "$FIREBASE_TOKEN" --force || true
+
+          echo "${{ secrets.CLOUDINARY_API_KEY }}" | \
+            firebase functions:secrets:set CLOUDINARY_API_KEY \
+            --project asgardchat-f3880 --token "$FIREBASE_TOKEN" --force || true
+
+          echo "${{ secrets.CLOUDINARY_CLOUD_NAME }}" | \
+            firebase functions:secrets:set CLOUDINARY_CLOUD_NAME \
+            --project asgardchat-f3880 --token "$FIREBASE_TOKEN" --force || true
+
+          echo "${{ secrets.AGORA_APP_CERTIFICATE }}" | \
+            firebase functions:secrets:set AGORA_APP_CERTIFICATE \
+            --project asgardchat-f3880 --token "$FIREBASE_TOKEN" --force || true
+
+          echo "${{ secrets.AGORA_APP_ID }}" | \
+            firebase functions:secrets:set AGORA_APP_ID \
+            --project asgardchat-f3880 --token "$FIREBASE_TOKEN" --force || true
+
+          echo "${{ secrets.GEMINI_API_KEY }}" | \
+            firebase functions:secrets:set GEMINI_API_KEY \
+            --project asgardchat-f3880 --token "$FIREBASE_TOKEN" --force || true
+
+      - name: Deploy Functions
+        env:
+          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+        run: |
+          cd project
+          firebase deploy --only functions \
+            --project asgardchat-f3880 \
+            --token "$FIREBASE_TOKEN" \
+            --force
+
+  # ──────────────────────────────────────────────────────────────
+  # JOB 2: Flutter APK build
+  # ──────────────────────────────────────────────────────────────
+  build:
+    name: Build APK
+    runs-on: ubuntu-latest
+    needs: deploy-functions
+
+    steps:
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Extract Asgard.zip
@@ -46,7 +128,7 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Cache pub dependencies
+      - name: Cache pub
         uses: actions/cache@v4
         with:
           path: ~/.pub-cache
@@ -67,10 +149,8 @@ jobs:
           mkdir -p ~/.android
           echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | tr -d " \n" | base64 -d > ~/.android/debug.keystore
           sed -i "s|storeFile=.*|storeFile=$HOME/.android/debug.keystore|" project/android/key.properties
-          echo "key.properties:"
-          cat project/android/key.properties
 
-      - name: Install Flutter dependencies
+      - name: Flutter pub get
         working-directory: project
         run: flutter pub get
 
@@ -84,32 +164,23 @@ jobs:
         run: dart run flutter_native_splash:create
         continue-on-error: true
 
-      - name: Build APK (Release)
+      - name: Build APK
         working-directory: project
         run: |
           flutter build apk --debug \
-            --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
-            --dart-define=CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
-            --dart-define=CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
-            --dart-define=FCM_SERVICE_ACCOUNT_JSON_B64=${{ secrets.FCM_SERVICE_ACCOUNT_JSON_B64 }} \
             --dart-define=AGORA_APP_ID=${{ secrets.AGORA_APP_ID }}
 
-      - name: Find & rename APK
+      - name: Rename APK
         run: |
-          echo "=== Tüm APK'lar ==="
-          find project/build -name "*.apk" 2>/dev/null
-          echo "=== Kopyalama ==="
-          # ABI splits veya normal - hangisi varsa al
           APK=$(find project/build -name "*.apk" | grep -v "unsigned\|unaligned" | head -1)
           if [ -n "$APK" ]; then
             cp "$APK" project/build/asgard-release.apk
-            echo "✅ APK bulundu: $APK"
+            echo "✅ APK: $APK"
           else
-            echo "❌ APK bulunamadı"
-            exit 1
+            echo "❌ APK bulunamadı"; exit 1
           fi
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: asgard-release
