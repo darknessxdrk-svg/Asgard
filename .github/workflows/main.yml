@@ -87,7 +87,7 @@ jobs:
       - name: Build APK (Release)
         working-directory: project
         run: |
-          flutter build apk --release \
+          flutter build apk --debug \
             --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
             --dart-define=CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
             --dart-define=CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
@@ -100,9 +100,7 @@ jobs:
           find project/build -name "*.apk" 2>/dev/null
           echo "=== Kopyalama ==="
           # ABI splits veya normal - hangisi varsa al
-          APK=$(find project/build -name "app-release.apk" | head -1)
-          # fallback: ABI split varsa herhangi birini al
-          if [ -z "$APK" ]; then APK=$(find project/build -name "*.apk" | grep -v "unsigned\|unaligned" | head -1); fi
+          APK=$(find project/build -name "*.apk" | grep -v "unsigned\|unaligned" | head -1)
           if [ -n "$APK" ]; then
             cp "$APK" project/build/asgard-release.apk
             echo "✅ APK bulundu: $APK"
