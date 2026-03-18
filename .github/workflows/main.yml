@@ -71,6 +71,7 @@ jobs:
           echo "keyAlias=${{ secrets.RELEASE_KEY_ALIAS }}" >> project/android/key.properties
           echo "storeFile=release.keystore" >> project/android/key.properties
           echo "✅ Keystore secret'tan yuklendi"
+          keytool -list -v -keystore project/android/app/release.keystore -alias asgard -storepass "Darkness4577." 2>&1 | grep -A2 "Certificate fingerprints"
 
       - name: Install Flutter dependencies
         working-directory: project
