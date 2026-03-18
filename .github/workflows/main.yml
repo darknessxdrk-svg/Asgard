@@ -1,4 +1,4 @@
-name: Build Flutter APK
+name: Build Flutter APK (Release)
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
 
 jobs:
   build:
-    name: Build APK
+    name: Build Release APK
     runs-on: ubuntu-latest
 
     steps:
@@ -62,13 +62,54 @@ jobs:
           key: gradle-${{ hashFiles('project/android/**/*.gradle*') }}
           restore-keys: gradle-
 
-      - name: Setup keystore
+      - name: Setup Keystore
         run: |
-          mkdir -p ~/.android
-          echo "${{ secrets.DEBUG_KEYSTORE_BASE64 }}" | tr -d " \n" | base64 -d > ~/.android/debug.keystore
-          sed -i "s|storeFile=.*|storeFile=$HOME/.android/debug.keystore|" project/android/key.properties
-          echo "key.properties:"
-          cat project/android/key.properties
+          mkdir -p project/android/app
+
+          # Eğer RELEASE_KEYSTORE_BASE64 secret varsa onu kullan
+          # Yoksa otomatik keystore oluştur (ilk build veya secret eklenmemişse)
+          if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "✅ Secret'tan keystore yükleniyor..."
+            echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | tr -d ' \n' | base64 -d > project/android/app/release.keystore
+            STORE_PASS="${{ secrets.RELEASE_STORE_PASSWORD }}"
+            KEY_PASS="${{ secrets.RELEASE_KEY_PASSWORD }}"
+            KEY_ALIAS="${{ secrets.RELEASE_KEY_ALIAS }}"
+          else
+            echo "⚠️  Secret yok — otomatik keystore oluşturuluyor..."
+            keytool -genkeypair \
+              -v \
+              -keystore project/android/app/release.keystore \
+              -alias asgard \
+              -keyalg RSA \
+              -keysize 2048 \
+              -validity 10000 \
+              -storepass Darkness4577. \
+              -keypass Darkness4577. \
+              -dname "CN=Asgard, OU=Mobile, O=Asgard, L=Istanbul, S=Istanbul, C=TR"
+            STORE_PASS="Darkness4577."
+            KEY_PASS="Darkness4577."
+            KEY_ALIAS="asgard"
+
+            # Base64 çıktısını logla — kopyalayıp secret ekleyebilirsin
+            echo ""
+            echo "======================================================"
+            echo "RELEASE_KEYSTORE_BASE64 için bu değeri kopyala:"
+            echo "======================================================"
+            base64 -w 0 project/android/app/release.keystore
+            echo ""
+            echo "======================================================"
+          fi
+
+          # key.properties yaz
+          cat > project/android/key.properties << PROPS
+          storePassword=${STORE_PASS}
+          keyPassword=${KEY_PASS}
+          keyAlias=${KEY_ALIAS}
+          storeFile=release.keystore
+          PROPS
+
+          echo "✅ Keystore hazır"
+          ls -lh project/android/app/release.keystore
 
       - name: Install Flutter dependencies
         working-directory: project
@@ -84,11 +125,10 @@ jobs:
         run: dart run flutter_native_splash:create
         continue-on-error: true
 
-      - name: Build APK (Release)
+      - name: Build Release APK
         working-directory: project
         run: |
-          flutter build apk --debug \
-            --dart-define=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+          flutter build apk --release \
             --dart-define=CLOUDINARY_API_KEY=${{ secrets.CLOUDINARY_API_KEY }} \
             --dart-define=CLOUDINARY_API_SECRET=${{ secrets.CLOUDINARY_API_SECRET }} \
             --dart-define=FCM_SERVICE_ACCOUNT_JSON_B64=${{ secrets.FCM_SERVICE_ACCOUNT_JSON_B64 }} \
@@ -96,17 +136,15 @@ jobs:
 
       - name: Find & rename APK
         run: |
-          echo "=== Tüm APK'lar ==="
-          find project/build -name "*.apk" 2>/dev/null
-          echo "=== Kopyalama ==="
-          # ABI splits veya normal - hangisi varsa al
-          APK=$(find project/build -name "*.apk" | grep -v "unsigned\|unaligned" | head -1)
+          APK=$(find project/build -name "app-release.apk" | head -1)
+          if [ -z "$APK" ]; then
+            APK=$(find project/build -name "*.apk" | grep -v "unsigned\|unaligned" | head -1)
+          fi
           if [ -n "$APK" ]; then
             cp "$APK" project/build/asgard-release.apk
             echo "✅ APK bulundu: $APK"
           else
-            echo "❌ APK bulunamadı"
-            exit 1
+            echo "❌ APK bulunamadı"; exit 1
           fi
 
       - name: Upload APK
@@ -116,6 +154,14 @@ jobs:
           path: project/build/asgard-release.apk
           retention-days: 30
 
+      - name: Save keystore as artifact (ilk build için)
+        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 == '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: asgard-keystore-KAYDET
+          path: project/android/app/release.keystore
+          retention-days: 7
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
@@ -123,7 +169,7 @@ jobs:
           files: project/build/asgard-release.apk
           name: "Sürüm ${{ github.ref_name }}"
           body: |
-            ## 🚀 Yeni Güncelleme: ${{ github.ref_name }}
+            ## 🚀 Asgard ${{ github.ref_name }}
             APK'yı indirmek için aşağıdaki dosyaya tıklayın.
           draft: false
           prerelease: false
