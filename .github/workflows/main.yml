@@ -65,51 +65,25 @@ jobs:
       - name: Setup Keystore
         run: |
           mkdir -p project/android/app
-
-          # Eğer RELEASE_KEYSTORE_BASE64 secret varsa onu kullan
-          # Yoksa otomatik keystore oluştur (ilk build veya secret eklenmemişse)
-          if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
-            echo "✅ Secret'tan keystore yükleniyor..."
-            echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | tr -d ' \n' | base64 -d > project/android/app/release.keystore
-            STORE_PASS="${{ secrets.RELEASE_STORE_PASSWORD }}"
-            KEY_PASS="${{ secrets.RELEASE_KEY_PASSWORD }}"
-            KEY_ALIAS="${{ secrets.RELEASE_KEY_ALIAS }}"
-          else
-            echo "⚠️  Secret yok — otomatik keystore oluşturuluyor..."
-            keytool -genkeypair \
-              -v \
-              -keystore project/android/app/release.keystore \
-              -alias asgard \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -storepass Darkness4577. \
-              -keypass Darkness4577. \
-              -dname "CN=Asgard, OU=Mobile, O=Asgard, L=Istanbul, S=Istanbul, C=TR"
-            STORE_PASS="Darkness4577."
-            KEY_PASS="Darkness4577."
-            KEY_ALIAS="asgard"
-
-            # Base64 çıktısını logla — kopyalayıp secret ekleyebilirsin
-            echo ""
-            echo "======================================================"
-            echo "RELEASE_KEYSTORE_BASE64 için bu değeri kopyala:"
-            echo "======================================================"
-            base64 -w 0 project/android/app/release.keystore
-            echo ""
-            echo "======================================================"
-          fi
-
-          # key.properties yaz
-          cat > project/android/key.properties << PROPS
-          storePassword=${STORE_PASS}
-          keyPassword=${KEY_PASS}
-          keyAlias=${KEY_ALIAS}
-          storeFile=release.keystore
-          PROPS
-
+          keytool -genkeypair \
+            -v \
+            -keystore project/android/app/release.keystore \
+            -alias asgard \
+            -keyalg RSA \
+            -keysize 2048 \
+            -validity 10000 \
+            -storepass "Darkness4577." \
+            -keypass "Darkness4577." \
+            -dname "CN=Asgard, OU=Mobile, O=Asgard, L=Istanbul, S=Istanbul, C=TR"
+          echo "storePassword=Darkness4577." > project/android/key.properties
+          echo "keyPassword=Darkness4577." >> project/android/key.properties
+          echo "keyAlias=asgard" >> project/android/key.properties
+          echo "storeFile=release.keystore" >> project/android/key.properties
           echo "✅ Keystore hazır"
-          ls -lh project/android/app/release.keystore
+          echo "====== BASE64 KEYSTORE - KOPYALA ======"
+          base64 -w 0 project/android/app/release.keystore
+          echo ""
+          echo "======================================="
 
       - name: Install Flutter dependencies
         working-directory: project
@@ -134,7 +108,7 @@ jobs:
             --dart-define=FCM_SERVICE_ACCOUNT_JSON_B64=${{ secrets.FCM_SERVICE_ACCOUNT_JSON_B64 }} \
             --dart-define=AGORA_APP_ID=${{ secrets.AGORA_APP_ID }}
 
-      - name: Find & rename APK
+      - name: Find and rename APK
         run: |
           APK=$(find project/build -name "app-release.apk" | head -1)
           if [ -z "$APK" ]; then
@@ -142,9 +116,10 @@ jobs:
           fi
           if [ -n "$APK" ]; then
             cp "$APK" project/build/asgard-release.apk
-            echo "✅ APK bulundu: $APK"
+            echo "✅ APK: $APK"
           else
-            echo "❌ APK bulunamadı"; exit 1
+            echo "❌ APK bulunamadı"
+            exit 1
           fi
 
       - name: Upload APK
@@ -154,11 +129,10 @@ jobs:
           path: project/build/asgard-release.apk
           retention-days: 30
 
-      - name: Save keystore as artifact (ilk build için)
-        if: ${{ secrets.RELEASE_KEYSTORE_BASE64 == '' }}
+      - name: Upload Keystore
         uses: actions/upload-artifact@v4
         with:
-          name: asgard-keystore-KAYDET
+          name: asgard-keystore-SAKLA
           path: project/android/app/release.keystore
           retention-days: 7
 
@@ -167,12 +141,10 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: project/build/asgard-release.apk
-          name: "Sürüm ${{ github.ref_name }}"
+          name: "Surum ${{ github.ref_name }}"
           body: |
-            ## 🚀 Asgard ${{ github.ref_name }}
-            APK'yı indirmek için aşağıdaki dosyaya tıklayın.
+            APK indirmek icin asagidaki dosyaya tiklayin.
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
